@@ -54,7 +54,7 @@
 	<repositories>
 		<repository>
 			<id>central</id>
-			<url>http://repo1.maven.org/maven2</url>
+			<url>https://repo1.maven.org/maven2</url>
 			<releases>
 				<enabled>true</enabled>
 			</releases>
@@ -196,6 +196,12 @@
                 <version>2.0.0_preview_973</version>
             </dependency>
 			<!-- zookeeper -->
+			<dependency>
+			   	<groupId>mockit</groupId>
+   			 	<artifactId>jmockit</artifactId>
+   				<version>0.999.10</version>
+            </dependency>
+
 			<dependency>
 				<groupId>org.apache.zookeeper</groupId>
 				<artifactId>zookeeper</artifactId>
