@@ -1,15 +1,13 @@
 package com.alibaba.otter.node.etl.common.db.utils;
 
-import java.util.Map;
-
 import com.alibaba.druid.sql.ast.SQLCommentHint;
 import com.alibaba.druid.sql.ast.SQLExpr;
-import com.alibaba.druid.sql.ast.SQLObject;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
 import com.alibaba.druid.sql.ast.expr.SQLPropertyExpr;
 import com.alibaba.druid.sql.ast.statement.SQLAlterTableItem;
 import com.alibaba.druid.sql.ast.statement.SQLAlterTableStatement;
+import com.alibaba.druid.sql.ast.statement.SQLAssignItem;
 import com.alibaba.druid.sql.ast.statement.SQLCreateTableStatement;
 import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlCreateTableStatement;
@@ -26,29 +24,29 @@ import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlOutputVisitor;
 public class DdlUtils {
 
     public static String convert(String sql, String sourceSchema, String sourceTable, String targetSchema,
-                                 String targetTable) {
+            String targetTable) {
         MySqlStatementParser parser = new MySqlStatementParser(sql);
         SQLStatement stmt = parser.parseStatement();
 
         StringBuilder out = new StringBuilder();
         OtterMyqlOutputVisitor visitor = new OtterMyqlOutputVisitor(out,
-            sourceSchema,
-            sourceTable,
-            targetSchema,
-            targetTable);
+                sourceSchema,
+                sourceTable,
+                targetSchema,
+                targetTable);
         stmt.accept(visitor);
         return out.toString();
     }
 
     public static class OtterMyqlOutputVisitor extends MySqlOutputVisitor {
 
-        private String              targetSchema;
-        private String              targetTable;
-        private String              sourceSchema;
-        private String              sourceTable;
+        private String targetSchema;
+        private String targetTable;
+        private String sourceSchema;
+        private String sourceTable;
 
         public OtterMyqlOutputVisitor(Appendable appender, String sourceSchema, String sourceTable,
-                                      String targetSchema, String targetTable){
+                String targetSchema, String targetTable) {
             super(appender);
             this.sourceSchema = sourceSchema;
             this.sourceTable = sourceTable;
@@ -62,7 +60,7 @@ public class DdlUtils {
                 String oldSchem = unescapeName(owner.getName());
                 String oldTable = unescapeName(((SQLPropertyExpr) sqlName).getName());
                 if ((sourceSchema == null || oldSchem.equalsIgnoreCase(sourceSchema))
-                    && (sourceTable == null || oldTable.equalsIgnoreCase(sourceTable))) { // rename需要匹配表名
+                        && (sourceTable == null || oldTable.equalsIgnoreCase(sourceTable))) { // rename需要匹配表名
                     owner.setName("`" + targetSchema + "`");
                     ((SQLPropertyExpr) sqlName).setName("`" + targetTable + "`");
                 }
@@ -127,7 +125,7 @@ public class DdlUtils {
                 print0(ucase ? "TABLE " : "table ");
             }
 
-            if (x.isIfNotExiists()) {
+            if (x.isIfNotExists()) {
                 print0(ucase ? "IF NOT EXISTS " : "if not exists ");
             }
 
@@ -155,26 +153,26 @@ public class DdlUtils {
                 print(')');
             }
 
-            for (Map.Entry<String, SQLObject> option : x.getTableOptions().entrySet()) {
-                String key = option.getKey();
+            for (SQLAssignItem item : x.getTableOptions()) {
+                SQLExpr key = item.getTarget();
 
                 print(' ');
-                print0(ucase ? key : key.toLowerCase());
+                print0(ucase ? key.toString() : key.toString().toLowerCase());
 
                 if ("TABLESPACE".equals(key)) {
                     print(' ');
-                    option.getValue().accept(this);
+                    item.getValue().accept(this);
                     continue;
                 } else if ("UNION".equals(key)) {
                     print0(" = (");
-                    option.getValue().accept(this);
+                    item.getValue().accept(this);
                     print(')');
                     continue;
                 }
 
                 print0(" = ");
 
-                option.getValue().accept(this);
+                item.getValue().accept(this);
             }
 
             if (x.getPartitioning() != null) {
@@ -236,27 +234,27 @@ public class DdlUtils {
             decrementIndent();
 
             int i = 0;
-            for (Map.Entry<String, SQLObject> option : x.getTableOptions().entrySet()) {
-                String key = option.getKey();
+            for (SQLAssignItem item : x.getTableOptions()) {
+                SQLExpr key = item.getTarget();
                 if (i != 0) {
                     print(' ');
                 }
-                print0(ucase ? key : key.toLowerCase());
+                print0(ucase ? key.toString() : key.toString().toLowerCase());
 
                 if ("TABLESPACE".equals(key)) {
                     print(' ');
-                    option.getValue().accept(this);
+                    item.getValue().accept(this);
                     continue;
                 } else if ("UNION".equals(key)) {
                     print0(" = (");
-                    option.getValue().accept(this);
+                    item.getValue().accept(this);
                     print(')');
                     continue;
                 }
 
                 print0(" = ");
 
-                option.getValue().accept(this);
+                item.getValue().accept(this);
                 i++;
             }
 
